@@ -26,8 +26,11 @@ def split_image_into_patches(image, patch_size):
     patches = patches.reshape(B, N, C, P, P)
     return patches
 
-# Step 2 - flatten_patches (not yet solved)
-# TODO: implement
+# Step 2 - flatten_patches
+def flatten_patches(patches):
+    # flatten each patch's channel and spatial dims into one vector, keep (B, N) leading dims.
+    B, N, C, P_h, P_w = patches.shape
+    return patches.reshape(B, N, C*P_h*P_w)
 
 # Step 3 - linear_projection (not yet solved)
 # TODO: implement
