@@ -393,8 +393,10 @@ def build_multimodal_embeddings(token_ids, image_tokens, embedding_matrix, posit
     # build fused multimodal embeddings by embedding text, adding positions, and splicing image tokens.
     text_embeddings = embed_token_ids(token_ids, embedding_matrix)
     text_embeddings = add_text_position_embeddings(text_embeddings, position_embeddings)
-    placeholder_position = find_image_placeholder_positions(token_ids, image_token_id)
-    return insert_image_tokens(text_embeddings, image_tokens, placeholder_position)
+    placeholder_positions = find_image_placeholder_positions(token_ids, image_token_id)
+    for placeholder_position in placeholder_positions:
+        text_embeddings = insert_image_tokens(text_embeddings, image_tokens, placeholder_position)
+    return text_embeddings
 
 # Step 41 - build_label_tensor (not yet solved)
 # TODO: implement
