@@ -456,8 +456,17 @@ def language_model_head(x, w_out, b_out):
     # project hidden states (L, D) to vocabulary logits (L, V) using w_out and b_out
     return x @ w_out + b_out
 
-# Step 47 - encode_image_to_tokens (not yet solved)
-# TODO: implement
+# Step 47 - encode_image_to_tokens
+def encode_image_to_tokens(image, vision_params, projector_params):
+    # run the vision encoder, drop the class token, and apply the projector.
+    patch_sequence = image
+    encoder_params = vision_params
+    encoder_output = vision_encoder(patch_sequence, encoder_params, num_heads)
+
+    patch_features = extract_patch_features(encoder_output)
+    
+    params = projector_params
+    return vision_language_projector(patch_features, params)
 
 # Step 48 - vision_language_forward (not yet solved)
 # TODO: implement
@@ -486,8 +495,126 @@ def language_model_head(x, w_out, b_out):
 # Step 56 - generate_caption (not yet solved)
 # TODO: implement
 
-# Step 57 - initialize_vlm_parameters (not yet solved)
-# TODO: implement
+# Step 57 - initialize_vlm_parameters
+def initialize_vlm_parameters(config, seed=0):
+    # build the full params dict with leaf tensors requiring grad for every component.
+    torch.manual_seed(seed)
+
+    def make_param(shape, init='normal'):
+        param = torch.empty(shape, dtype=torch.float32)
+        if init == 'normal':
+            param.normal_(mean=0.0, std=0.02)
+        elif init == 'ones':
+            param.fill_(1.0)
+        elif init == 'zeros':
+            param.zero_()
+        param.requires_grad = True
+        return param
+
+    image_size = config['image_size']
+    patch_size = config['patch_size']
+    num_patches = config['num_patches']
+    in_channels = config['in_channels']
+    d_vision = config['d_vision']
+    d_lang = config['d_text']  # maps d_text configuration to language embedding space
+    num_vision_heads = config['num_vision_heads']
+    num_decoder_heads = config['num_decoder_heads']
+    n_layers_vision = config['num_vision_layers']
+    n_layers_decoder = config['num_decoder_layers']
+    mlp_hidden_vision = config['mlp_hidden_vision']
+    mlp_hidden_text = config['mlp_hidden_text']
+    vocab_size = config['vocab_size']
+    max_seq_len = config['max_text_len']
+    num_image_tokens = config['num_image_tokens']
+    
+    patch_dim = in_channels * patch_size * patch_size
+
+    # 1. Vision Parameters
+    vision_blocks = []
+    for _ in range(n_layers_vision):
+        block = {
+            'attn': {
+                'wq': make_param((d_vision, d_vision)), 'bq': make_param((d_vision,), 'zeros'),
+                'wk': make_param((d_vision, d_vision)), 'bk': make_param((d_vision,), 'zeros'),
+                'wv': make_param((d_vision, d_vision)), 'bv': make_param((d_vision,), 'zeros'),
+                'wo': make_param((d_vision, d_vision)), 'bo': make_param((d_vision,), 'zeros'),
+            },
+            'mlp': {
+                'w1': make_param((mlp_hidden_vision, d_vision)), 'b1': make_param((mlp_hidden_vision,), 'zeros'),
+                'w2': make_param((d_vision, mlp_hidden_vision)), 'b2': make_param((d_vision,), 'zeros'),
+            },
+            'ln1_gamma': make_param((d_vision,), 'ones'), 'ln1_beta': make_param((d_vision,), 'zeros'),
+            'ln2_gamma': make_param((d_vision,), 'ones'), 'ln2_beta': make_param((d_vision,), 'zeros'),
+        }
+        vision_blocks.append(block)
+        
+    vision = {
+        'patch_proj_weight': make_param((d_vision, patch_dim)),
+        'patch_proj_bias': make_param((d_vision,), 'zeros'),
+        'class_token': make_param((1, 1, d_vision)),
+        'position_embeddings': make_param((1, num_patches + 1, d_vision)),
+        'blocks': vision_blocks,
+        'final_ln_gamma': make_param((d_vision,), 'ones'),
+        'final_ln_beta': make_param((d_vision,), 'zeros'),
+    }
+
+    # 2. Projector Parameters
+    projector = {
+        'w1': make_param((d_vision, d_lang)), 
+        'b1': make_param((d_lang,), 'zeros'),
+        'w2': make_param((d_lang, d_lang)),   
+        'b2': make_param((d_lang,), 'zeros'),
+    }
+
+    # 3. Embedding
+    embedding = make_param((vocab_size, d_lang))
+
+    # 4. Pos_embedding
+    pos_embedding = make_param((max_seq_len, d_lang))
+
+    # 5. Decoder_blocks
+    decoder_blocks = []
+    for _ in range(n_layers_decoder):
+        block = {
+            'attn': {
+                'wq': make_param((d_lang, d_lang)), 'bq': make_param((d_lang,), 'zeros'),
+                'wk': make_param((d_lang, d_lang)), 'bk': make_param((d_lang,), 'zeros'),
+                'wv': make_param((d_lang, d_lang)), 'bv': make_param((d_lang,), 'zeros'),
+                'wo': make_param((d_lang, d_lang)), 'bo': make_param((d_lang,), 'zeros'),
+            },
+            'mlp': {
+                'w1': make_param((mlp_hidden_text, d_lang)), 'b1': make_param((mlp_hidden_text,), 'zeros'),
+                'w2': make_param((d_lang, mlp_hidden_text)), 'b2': make_param((d_lang,), 'zeros'),
+            },
+            'ln1': {'gamma': make_param((d_lang,), 'ones'), 'beta': make_param((d_lang,), 'zeros')},
+            'ln2': {'gamma': make_param((d_lang,), 'ones'), 'beta': make_param((d_lang,), 'zeros')},
+            'num_heads': num_decoder_heads,
+        }
+        decoder_blocks.append(block)
+
+    # 6. Final_ln
+    final_ln = {
+        'gamma': make_param((d_lang,), 'ones'),
+        'beta': make_param((d_lang,), 'zeros'),
+    }
+    
+    # 7. Lm_head
+    lm_head = {
+        'w_out': make_param((d_lang, vocab_size)), 
+        'b_out': make_param((vocab_size,), 'zeros'),
+    }
+
+    return {
+        'vision': vision,
+        'projector': projector,
+        'embedding': embedding,
+        'pos_embedding': pos_embedding,
+        'decoder_blocks': decoder_blocks,
+        'final_ln': final_ln,
+        'lm_head': lm_head,
+        'image_token_id': config.get('image_token_id', 1),
+        'num_image_tokens': num_image_tokens,
+    }
 
 # Step 58 - collect_parameters (not yet solved)
 # TODO: implement
