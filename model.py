@@ -398,8 +398,19 @@ def build_multimodal_embeddings(token_ids, image_tokens, embedding_matrix, posit
         text_embeddings = insert_image_tokens(text_embeddings, image_tokens, placeholder_position)
     return text_embeddings
 
-# Step 41 - build_label_tensor (not yet solved)
-# TODO: implement
+# Step 41 - build_label_tensor
+import torch
+
+def build_label_tensor(token_ids, image_token_id, pad_token_id, num_image_tokens, ignore_index=-100):
+    """Build the label tensor aligned to the fused multimodal sequence."""
+    # expand image placeholders, mask image and pad positions with ignore_index
+    repeats = torch.where(token_ids == image_token_id, num_image_tokens, 1)
+    label = token_ids.repeat_interleave(repeats)
+    label = torch.where(
+        (label == image_token_id) | (label == pad_token_id),
+        ignore_index, label
+    )
+    return label
 
 # Step 42 - build_causal_mask (not yet solved)
 # TODO: implement
