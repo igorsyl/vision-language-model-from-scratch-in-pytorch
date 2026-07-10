@@ -356,8 +356,19 @@ def embed_token_ids(token_ids, embedding_matrix):
     # select the row of embedding_matrix for each token id
     return embedding_matrix[token_ids, :]
 
-# Step 37 - add_text_position_embeddings (not yet solved)
-# TODO: implement
+# Step 37 - add_text_position_embeddings
+import torch
+
+def add_text_position_embeddings(text_embeddings, position_embeddings):
+    """Add learnable position embeddings to text token embeddings.
+
+    text_embeddings: (T, D_lang)
+    position_embeddings: (T_max, D_lang) with T_max >= T
+    returns: (T, D_lang)
+    """
+    # add the first T rows of position_embeddings to text_embeddings
+    T = text_embeddings.size(0)
+    return text_embeddings + position_embeddings[:T, :]
 
 # Step 38 - find_image_placeholder_positions (not yet solved)
 # TODO: implement
