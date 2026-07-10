@@ -158,11 +158,9 @@ import torch
 
 def split_qkv_into_heads(q, k, v, num_heads):
     # reshape q, k, v from (B, S, d_model) into (B, num_heads, S, d_head) each
-    B, S, d_model = q.shape
-    d_head = d_model // num_heads
-    q_h = q.reshape(B, S, num_heads, d_head).transpose(1, 2)
-    k_h = k.reshape(B, S, num_heads, d_head).transpose(1, 2)
-    v_h = v.reshape(B, S, num_heads, d_head).transpose(1, 2)
+    q_h = split_into_heads(q, num_heads)
+    k_h = split_into_heads(k, num_heads)
+    v_h = split_into_heads(v, num_heads)
     return (q_h, k_h, v_h)
 
 # Step 17 - multi_head_attention_scores
