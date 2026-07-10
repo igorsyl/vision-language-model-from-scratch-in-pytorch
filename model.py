@@ -269,8 +269,18 @@ def pre_norm_sublayer(x, gamma, beta, sublayer_fn):
     # layer-normalize x, run sublayer_fn on it, then add the residual
     return residual_add(x, sublayer_fn(layer_norm(x, gamma, beta)))
 
-# Step 28 - vision_encoder_block (not yet solved)
-# TODO: implement
+# Step 28 - vision_encoder_block
+import torch
+
+def vision_encoder_block(x, block_params, num_heads):
+    # pre-norm MHSA sublayer, then pre-norm MLP sublayer, both with residuals.
+    sublayer_mha = lambda x : multi_head_self_attention(x, block_params['attn'], num_heads, mask=None)
+    gamma1, beta1 = block_params['ln1_gamma'], block_params['ln1_beta']
+    y = pre_norm_sublayer(x, gamma1, beta1, sublayer_mha)
+
+    sublayer_mlp = lambda x : mlp_block(x, block_params['mlp'])
+    gamma2, beta2 = block_params['ln2_gamma'], block_params['ln2_beta']
+    return pre_norm_sublayer(y, gamma2, beta2, sublayer_mlp)
 
 # Step 29 - vision_encoder (not yet solved)
 # TODO: implement
