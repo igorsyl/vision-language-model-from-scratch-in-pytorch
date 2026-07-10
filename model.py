@@ -554,6 +554,7 @@ def initialize_vlm_parameters(config, seed=0):
         'blocks': vision_blocks,
         'final_ln_gamma': make_param((d_vision,), 'ones'),
         'final_ln_beta': make_param((d_vision,), 'zeros'),
+        'patch_size': patch_size,
     }
 
     # 2. Projector Parameters
