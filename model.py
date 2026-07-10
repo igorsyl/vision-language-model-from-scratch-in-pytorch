@@ -261,8 +261,13 @@ def residual_add(residual, sublayer_output):
     # return the element-wise sum of residual and sublayer_output
     return residual + sublayer_output
 
-# Step 27 - pre_norm_sublayer (not yet solved)
-# TODO: implement
+# Step 27 - pre_norm_sublayer
+import torch
+
+def pre_norm_sublayer(x, gamma, beta, sublayer_fn):
+    """Apply pre-norm: LN(x) -> sublayer -> add residual x."""
+    # layer-normalize x, run sublayer_fn on it, then add the residual
+    return residual_add(x, sublayer_fn(layer_norm(x, gamma, beta)))
 
 # Step 28 - vision_encoder_block (not yet solved)
 # TODO: implement
