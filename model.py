@@ -111,7 +111,7 @@ import torch
 
 def attention_context(attn_weights, v):
     """Combine attention weights with values to produce context vectors."""
-    # TODO: return a tensor of shape (..., Sq, d_head) from attn_weights and v
+    # return a tensor of shape (..., Sq, d_head) from attn_weights and v
     return attn_weights @ v
 
 # Step 12 - scaled_dot_product_attention (not yet solved)
