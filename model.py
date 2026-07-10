@@ -145,8 +145,13 @@ def merge_heads(x):
     B, num_heads, S, d_head = x.shape    
     return x.transpose(1, 2).reshape(B, S, num_heads*d_head)
 
-# Step 15 - project_qkv (not yet solved)
-# TODO: implement
+# Step 15 - project_qkv
+def project_qkv(x, wq, bq, wk, bk, wv, bv):
+    # project x into separate query, key, and value tensors using three linear layers.
+    q = linear_projection(x, wq, bq)
+    k = linear_projection(x, wk, bk)
+    v = linear_projection(x, wv, bv)
+    return (q, k, v)
 
 # Step 16 - split_qkv_into_heads (not yet solved)
 # TODO: implement
