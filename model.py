@@ -47,8 +47,19 @@ def project_patches_to_embeddings(flat_patches, patch_proj_weight, patch_proj_bi
     # Linearly project flattened image patches into the ViT embedding dimension.
     return linear_projection(flat_patches, patch_proj_weight, patch_proj_bias)
 
-# Step 5 - prepend_class_token (not yet solved)
-# TODO: implement
+# Step 5 - prepend_class_token
+import torch
+
+def prepend_class_token(patch_embeddings, class_token):
+    """Prepend a learnable [CLS] token to the patch embedding sequence.
+
+    patch_embeddings: (B, num_patches, embed_dim)
+    class_token:      (1, 1, embed_dim)
+    returns:          (B, num_patches+1, embed_dim)
+    """
+    # prepend the [CLS] token to every sequence in the batch
+    B = patch_embeddings.shape[0]
+    return torch.cat((class_token.expand(B, -1, -1), patch_embeddings), 1)
 
 # Step 6 - add_position_embeddings (not yet solved)
 # TODO: implement
