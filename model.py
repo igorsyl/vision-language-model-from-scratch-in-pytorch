@@ -82,8 +82,14 @@ def compute_attention_scores(q, k):
     # compute the raw attention scores as Q times K-transpose
     return q @ k.mT
 
-# Step 8 - scale_attention_scores (not yet solved)
-# TODO: implement
+# Step 8 - scale_attention_scores
+import torch
+import math
+
+def scale_attention_scores(scores, d_head):
+    """Scale raw attention scores so softmax inputs stay well-conditioned."""
+    # Divide raw attention scores by a constant derived from d_head.
+    return scores / math.sqrt(d_head)
 
 # Step 9 - apply_attention_mask (not yet solved)
 # TODO: implement
