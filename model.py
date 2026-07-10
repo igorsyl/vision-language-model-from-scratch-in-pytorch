@@ -127,8 +127,14 @@ def scaled_dot_product_attention(q, k, v, mask=None):
     attn_weights = attention_softmax(masked_scores)
     return attention_context(attn_weights, v)
 
-# Step 13 - split_into_heads (not yet solved)
-# TODO: implement
+# Step 13 - split_into_heads
+import torch
+
+def split_into_heads(x, num_heads):
+    """Reshape (B, S, d_model) into (B, num_heads, S, d_head)."""
+    # split the last dim into (num_heads, d_head) and move heads next to batch
+    B, S, d_model = x.shape
+    return x.reshape(B, S, num_heads, -1).transpose(1, 2)
 
 # Step 14 - merge_heads (not yet solved)
 # TODO: implement
