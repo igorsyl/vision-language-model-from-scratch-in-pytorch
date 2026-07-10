@@ -331,13 +331,8 @@ def vision_language_projector(patch_features, params):
 def build_token_vocabulary(texts, image_token='<image>', pad_token='<pad>'):
     # Build a whitespace token-to-id vocabulary with pad at 0 and image token at 1.
     vocab = {pad_token: 0, image_token: 1}
-    tokens = set()
-    for text in sorted(texts):
-        for token in text.split():
-            tokens.add(token)
-    for token in sorted(tokens):
-        if token not in vocab:
-            vocab[token] = len(vocab)
+    unique_tokens = sorted({token for text in texts for token in text.split()} - vocab.keys())
+    vocab.update({token: idx for idx, token in enumerate(unique_tokens, start=len(vocab))})
     return vocab
 
 # Step 35 - encode_text_to_ids (not yet solved)
