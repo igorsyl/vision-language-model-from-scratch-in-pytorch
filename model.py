@@ -335,8 +335,10 @@ def build_token_vocabulary(texts, image_token='<image>', pad_token='<pad>'):
     vocab.update({token: idx for idx, token in enumerate(unique_tokens, start=len(vocab))})
     return vocab
 
-# Step 35 - encode_text_to_ids (not yet solved)
-# TODO: implement
+# Step 35 - encode_text_to_ids
+def encode_text_to_ids(text, vocab):
+    # split text on whitespace and map each token to its vocab id
+    return [vocab[token] for token in text.split()]
 
 # Step 36 - embed_token_ids (not yet solved)
 # TODO: implement
