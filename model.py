@@ -282,8 +282,16 @@ def vision_encoder_block(x, block_params, num_heads):
     gamma2, beta2 = block_params['ln2_gamma'], block_params['ln2_beta']
     return pre_norm_sublayer(y, gamma2, beta2, sublayer_mlp)
 
-# Step 29 - vision_encoder (not yet solved)
-# TODO: implement
+# Step 29 - vision_encoder
+import torch
+
+def vision_encoder(patch_sequence, encoder_params, num_heads):
+    """Stack ViT encoder blocks then apply a final layer norm to the patch sequence."""
+    # run patch_sequence through every block in encoder_params['blocks'], then final layer norm.
+    x = patch_sequence
+    for block in encoder_params['blocks']:
+        x = vision_encoder_block(x, block, num_heads)
+    return layer_norm(x, encoder_params['final_ln_gamma'], encoder_params['final_ln_beta'])
 
 # Step 30 - extract_patch_features (not yet solved)
 # TODO: implement
