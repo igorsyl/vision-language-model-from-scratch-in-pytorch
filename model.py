@@ -354,7 +354,7 @@ def embed_token_ids(token_ids, embedding_matrix):
         Tensor of shape (T, D_lang).
     """
     # select the row of embedding_matrix for each token id
-    return embedding_matrix[token_ids, :]
+    return embedding_matrix[token_ids]
 
 # Step 37 - add_text_position_embeddings
 import torch
@@ -386,8 +386,15 @@ def insert_image_tokens(text_embeddings, image_tokens, placeholder_position):
     # replace text_embeddings[placeholder_position] with the N image_tokens rows
     return torch.cat((text_embeddings[:placeholder_position], image_tokens, text_embeddings[placeholder_position+1:]))
 
-# Step 40 - build_multimodal_embeddings (not yet solved)
-# TODO: implement
+# Step 40 - build_multimodal_embeddings
+import torch
+
+def build_multimodal_embeddings(token_ids, image_tokens, embedding_matrix, position_embeddings, image_token_id):
+    # build fused multimodal embeddings by embedding text, adding positions, and splicing image tokens.
+    text_embeddings = embed_token_ids(token_ids, embedding_matrix)
+    text_embeddings = add_text_position_embeddings(text_embeddings, position_embeddings)
+    placeholder_position = find_image_placeholder_positions(token_ids, image_token_id)
+    return insert_image_tokens(text_embeddings, image_tokens, placeholder_position)
 
 # Step 41 - build_label_tensor (not yet solved)
 # TODO: implement
