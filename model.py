@@ -368,7 +368,7 @@ def add_text_position_embeddings(text_embeddings, position_embeddings):
     """
     # add the first T rows of position_embeddings to text_embeddings
     T = text_embeddings.size(0)
-    return text_embeddings + position_embeddings[:T, :]
+    return text_embeddings + position_embeddings[:T]
 
 # Step 38 - find_image_placeholder_positions
 import torch
