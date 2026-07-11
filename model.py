@@ -532,8 +532,10 @@ def masked_mean_loss(per_position_losses, shifted_labels, ignore_index=-100):
     total_loss = masked_losses.sum()
     return total_loss / valid_count
 
-# Step 52 - greedy_next_token (not yet solved)
-# TODO: implement
+# Step 52 - greedy_next_token
+def greedy_next_token(logits):
+    # return the int token id with the highest logit at the final position
+    return torch.argmax(logits[-1]).item()
 
 # Step 53 - apply_temperature (not yet solved)
 # TODO: implement
