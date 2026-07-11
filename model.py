@@ -712,11 +712,29 @@ def initialize_vlm_parameters(config, seed=0):
         'num_image_tokens': num_image_tokens,
     }
 
-# Step 58 - collect_parameters (not yet solved)
-# TODO: implement
+# Step 58 - collect_parameters
+def collect_parameters(params):
+    # recursively collect every leaf torch.Tensor with requires_grad=True into a flat list
+    out = []
+    def visit(n):
+        if isinstance(n, dict):
+            for k,v in n.items():
+                visit(v)
+        elif isinstance(n, list):
+            for v in n:
+                visit(v)
+        elif isinstance(n, torch.Tensor) and n.requires_grad:
+            out.append(n)
 
-# Step 59 - zero_gradients (not yet solved)
-# TODO: implement
+    visit(params)
+    return out
+
+# Step 59 - zero_gradients
+def zero_gradients(parameter_list):
+    # reset the .grad attribute of every parameter tensor to zero in place
+    for p in parameter_list:
+        if p.grad is not None:
+            p.grad.zero_()
 
 # Step 60 - training_step (not yet solved)
 # TODO: implement
