@@ -554,7 +554,7 @@ def top_k_filter(logits, k):
     if k <= 0: return logits
     k = min(k, logits.size(-1))
     top_k_values, _ = torch.topk(logits, k)
-    threshold = top_k_values[-1]
+    threshold = top_k_values[..., -1, None]
     indices_to_remove = logits < threshold
     logits[indices_to_remove] = -torch.inf
     return logits
