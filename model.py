@@ -736,11 +736,32 @@ def zero_gradients(parameter_list):
         if p.grad is not None:
             p.grad.zero_()
 
-# Step 60 - training_step (not yet solved)
-# TODO: implement
+# Step 60 - training_step
+def training_step(image, token_ids, labels, params, parameter_list, learning_rate):
+    """Run one optimization step: zero grads, forward, loss, backward, SGD update. Return the scalar loss."""
+    # zero grads, compute loss via the upstream helpers, backprop, then update each parameter in place
+    zero_gradients(parameter_list)
 
-# Step 61 - apply_gradient_update (not yet solved)
-# TODO: implement
+    logits = vision_language_forward(image, token_ids, params)
+    shifted_logits, shifted_labels = shift_logits_and_labels(logits, labels)
+    per_position_losses = per_position_cross_entropy(shifted_logits, shifted_labels, ignore_index=-100)
+    loss = masked_mean_loss(per_position_losses, shifted_labels, ignore_index=-100)
+    loss.backward()
+    with torch.no_grad():
+        for p in parameter_list:
+            if p.grad is not None:
+                p -= learning_rate * p.grad
+
+    return loss.item()
+
+# Step 61 - apply_gradient_update
+def apply_gradient_update(parameters, learning_rate):
+    # apply p.data -= learning_rate * p.grad in-place for each parameter with a populated grad.
+    with torch.no_grad():
+        for p in parameters:
+            if p.grad is not None:
+                p -= learning_rate * p.grad
+    return parameters
 
 # Step 62 - run_training_loop (not yet solved)
 # TODO: implement
