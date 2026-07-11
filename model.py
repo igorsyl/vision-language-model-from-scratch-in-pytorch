@@ -459,18 +459,50 @@ def encode_image_to_tokens(image, vision_params, projector_params):
     # run the vision encoder, drop the class token, and apply the projector.
     patch_sequence = image
     encoder_params = vision_params
-    encoder_output = vision_encoder(patch_sequence, encoder_params, num_heads)
-
+    encoder_output = vision_encoder(patch_sequence, encoder_params, vision_params['num_heads'])
     patch_features = extract_patch_features(encoder_output)
-    
     params = projector_params
     return vision_language_projector(patch_features, params)
 
-# Step 48 - vision_language_forward (not yet solved)
-# TODO: implement
+# Step 48 - vision_language_forward
+def vision_language_forward(image, token_ids, params):
+    C = image.shape[1]
+    patch_dim = params['vision']['patch_proj_weight'].shape[1]
+    patch_size = int((patch_dim // C) ** 0.5)
 
-# Step 49 - shift_logits_and_labels (not yet solved)
-# TODO: implement
+    patches = split_image_into_patches(image, params['vision']['patch_size'])
+    flat_patches = flatten_patches(patches)
+    patch_embeddings = project_patches_to_embeddings(flat_patches, params['vision']['patch_proj_weight'], params['vision']['patch_proj_bias'])
+    patch_embeddings = prepend_class_token(patch_embeddings, params['vision']['class_token'])
+    patch_seq = add_position_embeddings(image_tokens, params['vision']['position_embeddings'])
+
+    image_tokens = encode_image_to_tokens(patch_seq, params['vision'], params['projector'])
+    fused_embeds = build_multimodal_embeddings(token_ids, image_tokens, params['embedding'], params['pos_embedding'], params['image_token_id'])
+    
+    seq_len = fused_embeds.shape[1]
+    causal_mask = build_causal_mask(seq_len)
+
+    hidden = language_model_decoder(fused_embeds, params['decoder_blocks'], causal_mask)
+
+    hidden_norm = final_layer_norm(
+        hidden, 
+        params['final_ln']['gamma'], 
+        params['final_ln']['beta']
+    )
+
+    logits = language_model_head(
+        hidden_norm, 
+        params['lm_head']['w_out'], 
+        params['lm_head']['b_out']
+    )
+    return logits
+
+# Step 49 - shift_logits_and_labels
+import torch
+
+def shift_logits_and_labels(logits, labels):
+    # align each logit with the next-position label and return (shifted_logits, shifted_labels).
+    return logits[:-1], labels[1:]
 
 # Step 50 - per_position_cross_entropy (not yet solved)
 # TODO: implement
