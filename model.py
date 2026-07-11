@@ -551,10 +551,12 @@ import torch
 def top_k_filter(logits, k):
     """Keep only the top-k logits; set all others to -inf."""
     # keep top-k logits, replace the rest with -inf
-    if k == 0: return logits
+    if k <= 0: return logits
     k = min(k, logits.size(-1))
-    values, indices = torch.topk(logits, logits.size(-1)-k, largest=False)
-    logits[indices] = -torch.inf
+    top_k_values, _ = torch.topk(logits, k)
+    threshold = top_k_values[-1]
+    indices_to_remove = logits < threshold
+    logits[indices_to_remove] = -torch.inf
     return logits
 
 # Step 55 - sample_from_logits
@@ -572,8 +574,20 @@ def sample_from_logits(logits):
     probs = torch.softmax(logits, -1)
     return torch.multinomial(probs, 1).item()
 
-# Step 56 - generate_caption (not yet solved)
-# TODO: implement
+# Step 56 - generate_caption
+def generate_caption(image, prompt_ids, params, max_new_tokens, temperature=1.0, top_k=0, do_sample=False):
+    # autoregressively generate token ids by repeatedly calling vision_language_forward.
+    token_ids = prompt_ids
+    for _ in range(max_new_tokens):
+        logits = vision_language_forward(image, token_ids, params)
+        if do_sample:
+            logits = apply_temperature(logits, temperature)
+            logits = top_k_filter(logits, top_k)
+            token_id = sample_from_logits(logits)
+        else:
+            token_id = greedy_next_token(logits)
+        token_ids = torch.cat([token_ids, torch.tensor([token_id])])
+    return token_ids.tolist()
 
 # Step 57 - initialize_vlm_parameters
 def initialize_vlm_parameters(config, seed=0):
