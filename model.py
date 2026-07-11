@@ -535,7 +535,7 @@ def masked_mean_loss(per_position_losses, shifted_labels, ignore_index=-100):
 # Step 52 - greedy_next_token
 def greedy_next_token(logits):
     # return the int token id with the highest logit at the final position
-    return torch.argmax(logits[-1]).item()
+    return torch.argmax(logits).item()
 
 # Step 53 - apply_temperature
 import torch
@@ -554,7 +554,7 @@ def top_k_filter(logits, k):
     if k <= 0: return logits
     k = min(k, logits.size(-1))
     top_k_values, _ = torch.topk(logits, k)
-    threshold = top_k_values[..., -1, None]
+    threshold = top_k_values[-1]
     indices_to_remove = logits < threshold
     logits[indices_to_remove] = -torch.inf
     return logits
@@ -580,6 +580,7 @@ def generate_caption(image, prompt_ids, params, max_new_tokens, temperature=1.0,
     token_ids = prompt_ids
     for _ in range(max_new_tokens):
         logits = vision_language_forward(image, token_ids, params)
+        logits = logits[-1]
         if do_sample:
             logits = apply_temperature(logits, temperature)
             logits = top_k_filter(logits, top_k)
