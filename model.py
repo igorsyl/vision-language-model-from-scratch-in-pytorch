@@ -456,7 +456,6 @@ def language_model_head(x, w_out, b_out):
 
 # Step 47 - encode_image_to_tokens
 def encode_image_to_tokens(image, vision_params, projector_params):
-    # run the vision encoder, drop the class token, and apply the projector.
     if image.ndim == 3:
         image = image.unsqueeze(0)
     patches = split_image_into_patches(image, vision_params['patch_size'])
@@ -471,17 +470,7 @@ def encode_image_to_tokens(image, vision_params, projector_params):
 
 # Step 48 - vision_language_forward
 def vision_language_forward(image, token_ids, params):
-    C = image.shape[1]
-    patch_dim = params['vision']['patch_proj_weight'].shape[1]
-    patch_size = int((patch_dim // C) ** 0.5)
-
-    patches = split_image_into_patches(image, params['vision']['patch_size'])
-    flat_patches = flatten_patches(patches)
-    patch_embeddings = project_patches_to_embeddings(flat_patches, params['vision']['patch_proj_weight'], params['vision']['patch_proj_bias'])
-    patch_embeddings = prepend_class_token(patch_embeddings, params['vision']['class_token'])
-    patch_seq = add_position_embeddings(image_tokens, params['vision']['position_embeddings'])
-
-    image_tokens = encode_image_to_tokens(patch_seq, params['vision'], params['projector'])
+    image_tokens = encode_image_to_tokens(image, params['vision'], params['projector'])
     fused_embeds = build_multimodal_embeddings(token_ids, image_tokens, params['embedding'], params['pos_embedding'], params['image_token_id'])
     
     seq_len = fused_embeds.shape[1]
