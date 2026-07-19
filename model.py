@@ -457,12 +457,17 @@ def language_model_head(x, w_out, b_out):
 # Step 47 - encode_image_to_tokens
 def encode_image_to_tokens(image, vision_params, projector_params):
     # run the vision encoder, drop the class token, and apply the projector.
-    patch_sequence = image
-    encoder_params = vision_params
-    encoder_output = vision_encoder(patch_sequence, encoder_params, vision_params['num_heads'])
+    if image.ndim == 3:
+        image = image.unsqueeze(0)
+    patches = split_image_into_patches(image, vision_params['patch_size'])
+    flat_patches = flatten_patches(patches)
+    patch_embeddings = project_patches_to_embeddings(flat_patches, vision_params['patch_proj_weight'], vision_params['patch_proj_bias'])
+    tokens = prepend_class_token(patch_embeddings, vision_params['class_token'])
+    patch_sequence = add_position_embeddings(tokens, vision_params['position_embeddings'])
+    encoder_output = vision_encoder(patch_sequence, vision_params, vision_params['num_heads'])
     patch_features = extract_patch_features(encoder_output)
-    params = projector_params
-    return vision_language_projector(patch_features, params)
+    result = vision_language_projector(patch_features, projector_params)
+    return result.squeeze(0)
 
 # Step 48 - vision_language_forward
 def vision_language_forward(image, token_ids, params):
@@ -747,11 +752,7 @@ def training_step(image, token_ids, labels, params, parameter_list, learning_rat
     per_position_losses = per_position_cross_entropy(shifted_logits, shifted_labels, ignore_index=-100)
     loss = masked_mean_loss(per_position_losses, shifted_labels, ignore_index=-100)
     loss.backward()
-    with torch.no_grad():
-        for p in parameter_list:
-            if p.grad is not None:
-                p -= learning_rate * p.grad
-
+    apply_gradient_update(parameter_list, learning_rate)
     return loss.item()
 
 # Step 61 - apply_gradient_update
@@ -763,6 +764,13 @@ def apply_gradient_update(parameters, learning_rate):
                 p -= learning_rate * p.grad
     return parameters
 
-# Step 62 - run_training_loop (not yet solved)
-# TODO: implement
+# Step 62 - run_training_loop
+def run_training_loop(params, batch, num_steps, learning_rate):
+    # run num_steps of training_step over the batch and return a list of losses
+    parameter_list = collect_parameters(params)
+    losses = []
+    for step in range(num_steps):
+        loss = training_step(batch['image'], batch['token_ids'], batch['labels'], params, parameter_list, learning_rate)
+        losses.append(loss)
+    return losses
 
