@@ -602,7 +602,7 @@ def initialize_vlm_parameters(config, seed=0):
 
     image_size = config['image_size']
     patch_size = config['patch_size']
-    num_patches = config['num_patches']
+    num_patches = image_size // patch_size #config['num_patches']
     in_channels = config['in_channels']
     d_vision = config['d_vision']
     d_lang = config['d_text']  # maps d_text configuration to language embedding space
